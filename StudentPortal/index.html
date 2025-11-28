@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal v3.037</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root { --p:#6366f1; --ph:#4f46e5; --r:#ef4444; --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:grid;place-items:center;}
+    .login-box{background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);padding:40px;border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,0.6);width:380px;text-align:center;border:1px solid rgba(99,102,241,0.3);}
+    .login-box h1{font-size:2.8rem;margin-bottom:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);background-clip:text;-webkit-background-clip:text;color:transparent;}
+    .login-box small{display:block;margin:10px 0 30px;opacity:0.8;}
+    input{width:100%;padding:16px;margin:12px 0;border-radius:16px;border:none;background:rgba(255,255,255,0.1);color:white;font-size:1.1rem;}
+    input::placeholder{color:rgba(255,255,255,0.6);}
+    input:focus{outline:none;background:rgba(255,255,255,0.2);box-shadow:0 0 0 3px rgba(99,102,241,0.4);}
+    button{width:100%;padding:16px;margin:12px 0;border:none;border-radius:16px;background:var(--p);color:white;font-weight:600;font-size:1.1rem;cursor:pointer;transition:0.3s;}
+    button:hover{background:var(--ph);transform:translateY(-2px);}
+    .msg{margin-top:15px;padding:12px;border-radius:12px;font-weight:600;}
+    .error{background:#fee2e2;color:#991b1b;}
+    .success{background:#d1fae5;color:#065f46;}
+    #main{display:none;background:var(--bg);position:fixed;inset:0;flex-direction:column;}
+    .header{background:rgba(30,41,59,0.95);padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+    .header h2{font-size:1.6rem;}
+    .nav{background:rgba(30,41,59,0.95);display:flex;gap:8px;padding:12px;overflow-x:auto;}
+    .nav button{padding:12px 20px;background:transparent;border:1px solid rgba(99,102,241,0.4);color:var(--text);border-radius:16px;min-width:130px;transition:0.3s;}
+    .nav button.active,.nav button:hover{background:var(--p);border-color:var(--p);}
+    .content{flex:1;padding:20px;overflow-y:auto;}
+    .card{background:var(--card);border-radius:20px;padding:20px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,0.4);}
+    .chat-box{height:65vh;overflow-y:auto;background:rgba(0,0,0,0.2);padding:16px;border-radius:20px;margin-bottom:12px;}
+    .bubble{padding:12px 18px;margin:8px 0;border-radius:20px;max-width:75%;word-wrap:break-word;}
+    .sent{background:var(--p);color:white;align-self:flex-end;}
+    .received{background:rgba(255,255,255,0.1);align-self:flex-start;}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN v1.97 -->
+<div class="login-box" id="login">
+  <h1>Student Portal</h1>
+  <small>Login Page — v1.97</small>
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="pass" placeholder="Password">
+  <button onclick="reg()">Register & Enter Instantly</button>
+  <button onclick="log()">Login</button>
+  <div id="msg" class="msg"></div>
+</div>
+
+<!-- MAIN v3.037 -->
+<div id="main">
+  <div class="header">
+    <h2>Portal <b>v3.037</b> — <span id="user">User</span></h2>
+    <button onclick="out()" style="background:var(--r);padding:10px 20px;border-radius:16px;">Logout</button>
+  </div>
+  <div class="nav">
+    <button class="active" onclick="go('home')">Home</button>
+    <button onclick="go('chat')">Chat</button>
+    <button onclick="go('projects')">Projects</button>
+    <button onclick="go('events')">Events</button>
+    <button onclick="go('hw')">Homework</button>
+    <button id="adminBtn" class="hidden" onclick="go('admin')">Admin</button>
+  </div>
+  <div class="content">
+    <div id="home" class="page"><div class="card"><h2>You’re in v3.037</h2><p>Everything works instantly.</p></div></div>
+    <div id="chat" class="page hidden">
+      <div class="card">
+        <div id="cbox" class="chat-box"></div>
+        <input type="text" id="cinput" placeholder="Type message..." onkeypress="if(event.key==='Enter')send()">
+      </div>
+    </div>
+    <div id="projects" class="page hidden"><div class="card"><h2>Projects coming soon</h2></div></div>
+    <div id="events" class="page hidden"><div class="card"><h2>Events coming soon</h2></div></div>
+    <div id="hw" class="page hidden"><div class="card"><h2>Homework coming soon</h2></div></div>
+    <div id="admin" class="page hidden"><div class="card"><h2>Admin Panel</h2></div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const page = { login: "1.97", main: "3.037" };
+  console.log("Login:", page.login, "| Main:", page.main);
+
+  const supabase = Supabase.createClient(
+    'https://vnhftbzhmqytdepuahnx.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuaGZ0YnpobXF5dGRlcHVhaG54Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc0MTg4MDAsImV4cCI6MjA1Mjk5NDgwMH0.Y0bF8p1oX2p8i3n7q8dO8kR8z8p8v8t8u8y8x8w8v8'
+  );
+
+  let user, admin = false;
+  const ADMIN_EMAIL = "yasser@admin.com"; // ← CHANGE THIS
+
+  supabase.auth.onAuthStateChange(async (e, s) => {
+    if (s) {
+      user = s.user;
+      let p = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (!p.data) {
+        await supabase.from('profiles').insert({id:user.id, username:user.email.split('@')[0], is_admin:user.email===ADMIN_EMAIL});
+        p.data = {is_admin:user.email===ADMIN_EMAIL};
+      }
+      if (p.data.is_banned) return alert("BANNED"), supabase.auth.signOut();
+      admin = p.data.is_admin;
+      document.getElementById('user').textContent = p.data.username || user.email;
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('main').style.display = 'flex';
+      if (admin) document.getElementById('adminBtn').classList.remove('hidden');
+      loadChat();
+    }
+  });
+
+  async function reg() {
+    const { error } = await supabase.auth.signUp({email:email.value, password:pass.value});
+    if (error) msg.innerHTML = error.message;
+  }
+  async function log() {
+    const { error } = await supabase.auth.signInWithPassword({email:email.value, password:pass.value});
+    if (error) msg.innerHTML = error.message;
+  }
+  function out() { supabase.auth.signOut(); location.reload(); }
+  function go(id) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+    document.getElementById(id).classList.remove('hidden');
+    event.target.classList.add('active');
+  }
+
+  async function send() {
+    if (!cinput.value.trim()) return;
+    await supabase.from('chat').insert({message:cinput.value, author:user.id, username:document.getElementById('user').textContent});
+    cinput.value = '';
+  }
+  supabase.channel('chat').on('postgres_changes',{event:'*',schema:'public',table:'chat'},loadChat).subscribe();
+  async function loadChat() {
+    const {data} = await supabase.from('chat').select().order('id');
+    cbox.innerHTML = data.map(m=>`<div style="display:flex;justify-content:${m.author===user.id?'flex-end':'flex-start'}">
+      <div class="bubble ${m.author===user.id?'sent':'received'}">${m.message}<br><small>${m.username}</small></div>
+    </div>`).join('');
+    cbox.scrollTop = cbox.scrollHeight;
+  }
+
+  supabase.auth.getSession().then(s=>{if(s.data.session) supabase.auth.setSession(s.data.session)});
+</script>
+</body>
+</html>
